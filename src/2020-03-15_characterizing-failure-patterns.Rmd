@@ -35,10 +35,22 @@ library(ggfortify)
 
 ```{r}
 param1_sample_size <- 500
-param2_shape <- 1
+param2_shape <- .5
 param3_prop_censor <- 0.00
-param4_step_size <- 0.01
+param4_step_size <- 0.001
 
+```
+
+## Parameters: 
+
+1. Sample size: `r param1_sample_size`
+
+1. Weibull shape parameter: `r param2_shape`
+
+1. Proportion of observations that are censored: `r param3_prop_censor`
+
+
+```{r}
 v1_sample <- rweibull(param1_sample_size, 
                       shape = param2_shape, 
                       scale = 1)
@@ -59,7 +71,7 @@ df1_input_data <- data.frame(time = v1_sample,
 # Fitting and plotting K-M curve 
 km1 <- survfit(Surv(time, is_censored) ~ 1, 
                data = df1_input_data)
-autoplot(km1) 
+# autoplot(km1) 
 
 km1_summary <- summary(km1, times = seq(0, 5, param4_step_size)) 
 
@@ -82,7 +94,11 @@ df2_surv_summary %>%
               col = "red") + 
    scale_y_continuous(limits = c(0, 10))
 
-```
 
+# Let's take the average of the first 5 values of the hazard function, as an 
+# approximation of the y-intercept of the hazard function: 
+mean(df2_surv_summary$finite_diff_approx_of_hazard[1:20], 
+     na.rm = TRUE)
+```
 
 
