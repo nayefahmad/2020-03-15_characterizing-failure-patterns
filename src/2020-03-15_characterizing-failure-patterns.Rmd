@@ -1,0 +1,88 @@
+---
+title: "Characterizing failure patterns"
+author: "Nayef Ahmad"
+date: "2020-03-15"
+output: 
+   html_document: 
+     keep_md: yes
+     code_folding: hide
+     toc: true
+     toc_float:
+       collapsed: false
+     toc_folding: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE, 
+                      warning = FALSE)
+```
+
+# Overview 
+
+
+# Libraries 
+
+```{r}
+library(tidyverse)
+library(survival)
+library(DT)
+library(ggfortify)
+```
+
+# Case 1: Exponential with no censorship 
+
+
+```{r}
+param1_sample_size <- 500
+param2_shape <- 1
+param3_prop_censor <- 0.00
+param4_step_size <- 0.01
+
+v1_sample <- rweibull(param1_sample_size, 
+                      shape = param2_shape, 
+                      scale = 1)
+
+v2_is_censored <- sample(c(0, 1),
+                         size = param1_sample_size,
+                         replace = TRUE,
+                         prob = c(param3_prop_censor, 
+                                  1 - param3_prop_censor))
+
+# density(v1_sample) %>% plot
+# ecdf(v1_sample) %>% plot
+
+df1_input_data <- data.frame(time = v1_sample, 
+                             is_censored = v2_is_censored)
+
+
+# Fitting and plotting K-M curve 
+km1 <- survfit(Surv(time, is_censored) ~ 1, 
+               data = df1_input_data)
+autoplot(km1) 
+
+km1_summary <- summary(km1, times = seq(0, 5, param4_step_size)) 
+
+df2_surv_summary <- 
+   tibble(time = km1_summary$time, 
+          surv = km1_summary$surv, 
+          cumhaz = km1_summary$cumhaz) %>% 
+   mutate(log_surv = log(surv),
+          finite_diff_approx_of_hazard = -1 * ((log_surv - lag(log_surv))/param4_step_size))
+
+df2_surv_summary
+
+
+df2_surv_summary %>% 
+   ggplot(aes(x = time,
+              y = finite_diff_approx_of_hazard)) + 
+   geom_point() + 
+   geom_smooth() + 
+   geom_hline(yintercept = 1, 
+              col = "red") + 
+   scale_y_continuous(limits = c(0, 10))
+
+```
+
+
+
